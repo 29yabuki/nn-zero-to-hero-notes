@@ -99,7 +99,7 @@ class Value:
 
     def log(self):
         x = self.data
-        out = Value(log(x), (self, ), 'log')
+        out = Value(math.log(x), (self, ), 'log')
 
         def _backward():
             self.grad += (1/x) * out.grad
