@@ -43,7 +43,7 @@ class Value:
     
     def __pow__(self, other):
         assert isinstance(other, (int, float))
-        out = Value(self.data**other, (self,), f'**{other}')
+        out = Value(self.data**other, (self, ), f'**{other}')
         
         def _backward():
             local = other * (self.data ** (other-1))
@@ -77,8 +77,18 @@ class Value:
         out._backward = _backward
         return out
     
+    def exp(self):
+        x = self.data
+        out = Value(math.exp(x), (self, ), 'exp')
+        
+        def _backward():
+            self.grad += out.data * out.grad
+        
+        out._backward = _backward
+        return out
+
     def relu(self):
-        out = Value(0 if self.data < 0 else self.data, (self,), 'ReLU')
+        out = Value(0 if self.data < 0 else self.data, (self, ), 'ReLU')
         
         def _backward():
             self.grad += (out.data > 0) * out.grad
@@ -92,17 +102,7 @@ class Value:
         out = Value(t, (self, ), 'tanh')
         
         def _backward():
-            self.grad += (1 - (t ** 2.0)) * out.grad
-        
-        out._backward = _backward
-        return out
-    
-    def exp(self):
-        x = self.data
-        out = Value(math.exp(x), (self, ), 'exp')
-        
-        def _backward():
-            self.grad += out.data * out.grad
+            self.grad += (1 - (t**2)) * out.grad
         
         out._backward = _backward
         return out
