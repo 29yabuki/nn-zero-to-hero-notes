@@ -9,14 +9,14 @@ class Value:
         self._prev = set(_children)
         self._op = _op
         self.label = label
-
+    
     def __repr__(self):
         return f'Value(data={self.data})'
-
+    
     def __add__(self, other):
         other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data + other.data, (self, other), '+')
-
+        
         def _backward():
             self.grad += 1.0 * out.grad
             other.grad += 1.0 * out.grad
@@ -27,14 +27,14 @@ class Value:
     def __mul__(self, other):
         other = other if isinstance(other, Value) else Value(other)
         out = Value(self.data * other.data, (self, other), '*')
-
+        
         def _backward():
             self.grad += other.data * out.grad
             other.grad += self.data * out.grad
         
         out._backward = _backward
         return out
-
+    
     def __radd__(self, other):
         return self + other
     
@@ -44,36 +44,46 @@ class Value:
     def __pow__(self, other):
         assert isinstance(other, (int, float))
         out = Value(self.data**other, (self,), f'**{other}')
-
+        
         def _backward():
-            local = other * (self.data ** (other-1)) 
+            local = other * (self.data ** (other-1))
             self.grad += local * out.grad
-
+        
         out._backward = _backward
         return out
-
+    
     def __truediv__(self, other):
         return self * (other ** -1)
-
+    
     def __rtruediv__(self, other):
         return other * (self ** -1)
     
     def __neg__(self):
         return self * -1
-
+    
     def __sub__(self, other):
         return self + (-other)
-
+    
     def __rsub__(self, other):
         return other + (-self)
     
+    def log(self):
+        x = self.data
+        out = Value(math.log(x), (self, ), 'log')
+        
+        def _backward():
+            self.grad += (1/x) * out.grad
+        
+        out._backward = _backward
+        return out
+    
     def relu(self):
         out = Value(0 if self.data < 0 else self.data, (self,), 'ReLU')
-
+        
         def _backward():
             self.grad += (out.data > 0) * out.grad
+        
         out._backward = _backward
-
         return out
     
     def tanh(self):
@@ -86,24 +96,14 @@ class Value:
         
         out._backward = _backward
         return out
-
+    
     def exp(self):
         x = self.data
         out = Value(math.exp(x), (self, ), 'exp')
-
+        
         def _backward():
             self.grad += out.data * out.grad
-
-        out._backward = _backward
-        return out
-
-    def log(self):
-        x = self.data
-        out = Value(math.log(x), (self, ), 'log')
-
-        def _backward():
-            self.grad += (1/x) * out.grad
-
+        
         out._backward = _backward
         return out
     
@@ -117,7 +117,7 @@ class Value:
                 for child in v._prev:
                     build_topo(child)
                 topo.append(v)
-                
+        
         build_topo(self)
         
         self.grad = 1.0
