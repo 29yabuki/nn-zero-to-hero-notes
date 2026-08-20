@@ -40,7 +40,7 @@ class Value:
     
     def __rmul__(self, other):
         return self * other
-    
+
     def __pow__(self, other):
         assert isinstance(other, (int, float))
         out = Value(self.data**other, (self, ), f'**{other}')
